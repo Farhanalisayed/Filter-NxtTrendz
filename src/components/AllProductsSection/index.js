@@ -75,10 +75,10 @@ class AllProductsSection extends Component {
     isLoading: false,
     apiStatus: '',
     productsList: [],
-    activeCategoryID: '0',
+    activeCategoryID: '',
     searchInput: '',
     activeOptionId: sortbyOptions[0].optionId,
-    activeRatingID: ratingsList[3].ratingId,
+    activeRatingID: '',
   }
 
   componentDidMount() {
@@ -102,7 +102,7 @@ class AllProductsSection extends Component {
       method: 'GET',
     }
     const response = await fetch(apiUrl, options)
-    if (response.ok) {
+    if (response.ok === true) {
       const fetchedData = await response.json()
       const updatedData = fetchedData.products.map(product => ({
         title: product.title,
@@ -112,20 +112,11 @@ class AllProductsSection extends Component {
         imageUrl: product.image_url,
         rating: product.rating,
       }))
-
-      if (updatedData === []) {
-        this.setState({
-          productsList: updatedData,
-          apiStatus: constants.noProducts,
-          isLoading: false,
-        })
-      } else {
-        this.setState({
-          productsList: updatedData,
-          apiStatus: constants.success,
-          isLoading: false,
-        })
-      }
+      this.setState({
+        productsList: updatedData,
+        apiStatus: constants.success,
+        isLoading: false,
+      })
     } else if (response.status === 401) {
       this.setState({
         isLoading: false,
@@ -146,17 +137,20 @@ class AllProductsSection extends Component {
     this.setState({activeCategoryID}, this.getProducts)
   }
 
-  updateRatingss = activeRatingID => {
+  updateRatings = activeRatingID => {
     this.setState({activeRatingID}, this.getProducts)
   }
 
   onResetting = () => {
-    this.setState({
-      activeCategoryID: '0',
-      searchInput: '',
-      activeOptionId: sortbyOptions[0].optionId,
-      activeRatingID: ratingsList[3].ratingId,
-    })
+    this.setState(
+      {
+        activeCategoryID: '',
+        searchInput: '',
+        activeOptionId: sortbyOptions[0].optionId,
+        activeRatingID: '',
+      },
+      this.getProducts,
+    )
   }
 
   renderLoader = () => (
@@ -168,7 +162,9 @@ class AllProductsSection extends Component {
   renderProductsList = () => {
     const {productsList, activeOptionId} = this.state
     // TODO: Add No Products View
-    return (
+    const lengthy = productsList.length
+
+    return lengthy > 0 ? (
       <div className="all-products-container">
         <ProductsHeader
           activeOptionId={activeOptionId}
@@ -181,25 +177,24 @@ class AllProductsSection extends Component {
           ))}
         </ul>
       </div>
+    ) : (
+      <div className="no-prod-cont">
+        <img
+          className="image_1"
+          src="https://assets.ccbp.in/frontend/react-js/nxt-trendz/nxt-trendz-no-products-view.png"
+          alt="no products"
+        />
+        <h1 className="err-heading">No Products Found</h1>
+        <p className="err-para">
+          We could not find any products. Try other filters.
+        </p>
+      </div>
     )
   }
   // TODO: Add failure view
-  renderNoProducts = () => (
-    <div className="no-prod-cont">
-      <img
-        className="image_1"
-        src="https://assets.ccbp.in/frontend/react-js/nxt-trendz/nxt-trendz-no-products-view.png"
-        alt="no products"
-      />
-      <h1 className="err-heading">No Products Found</h1>
-      <p className="err-para">
-        We could not find any products. Try other filters.
-      </p>
-    </div>
-  )
 
-  renderFailureView = () => {
-    ;<div className="no-prod-cont">
+  renderFailureView = () => (
+    <div className="no-prod-cont">
       <img
         className="image_1"
         src="https://assets.ccbp.in/frontend/react-js/nxt-trendz/nxt-trendz-no-products-view.png"
@@ -212,7 +207,7 @@ class AllProductsSection extends Component {
         Please try again.
       </p>
     </div>
-  }
+  )
 
   renderResults = () => {
     const {apiStatus} = this.state
@@ -220,16 +215,15 @@ class AllProductsSection extends Component {
       case constants.success:
         return this.renderProductsList()
       case constants.failure:
-        return this.renderProductsList()
-      case constants.noProducts:
-        return this.renderProductsList()
+        return this.renderFailureView()
       default:
         return null
     }
   }
 
   render() {
-    const {isLoading} = this.state
+    const {isLoading, activeCategoryID, activeRatingID, searchInput} =
+      this.state
 
     return (
       <div className="all-products-section">
@@ -240,8 +234,10 @@ class AllProductsSection extends Component {
           updateCategory={this.updateCategory}
           updateRatings={this.updateRatings}
           onResetting={this.onResetting}
+          activeCategoryID={activeCategoryID}
+          activeRatingID={activeRatingID}
+          searchInput={searchInput}
         />
-
         {isLoading ? this.renderLoader() : this.renderResults()}
       </div>
     )
